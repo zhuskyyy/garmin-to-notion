@@ -47,3 +47,13 @@ jobs:
           python personal-records.py
           python daily-steps.py
           python sleep-data.py
+
+      - name: Generate daily health brief
+        env:
+          GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
+          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_SLEEP_DB_ID: ${{ secrets.NOTION_SLEEP_DB_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TZ: 'Australia/Sydney'
+        run: python kev_daily_health.py
