@@ -42,7 +42,7 @@ def pull_garmin():
     d = {}
 
     try:
-        raw = client.get_sleep_data(yesterday)
+        raw = client.get_sleep_data(today_str)
         dto = raw.get("dailySleepDTO", {})
         def h(s): return round(s / 3600, 2) if s else None
         d["sleep_score"]   = dto.get("sleepScores", {}).get("overall", {}).get("value")
@@ -176,6 +176,19 @@ def parse(text):
     }
 
 
+def find_notion_page(title):
+    """Search Sleep Data DB for a row matching the given date title (DD.MM.YYYY)."""
+    r = requests.post(
+        f"https://api.notion.com/v1/databases/{NOTION_DB_ID}/query",
+        headers={"Authorization": f"Bearer {NOTION_TOKEN}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"},
+        json={"filter": {"property": "Date", "title": {"equals": title}}},
+        timeout=15,
+    )
+    r.raise_for_status()
+    results = r.json().get("results", [])
+    return results[0]["id"] if results else None
+
+
 def write_notion(d, p, iso_date):
     def num(v): return {"number": round(float(v), 2)} if v is not None else {"number": None}
     def sel(v): return {"select": {"name": str(v)}} if v else {}
@@ -185,9 +198,37 @@ def write_notion(d, p, iso_date):
     hrv_sel = hrv_map.get((d.get("hrv_stat") or "").lower(), d.get("hrv_stat"))
 
     title = datetime.strptime(iso_date, "%Y-%m-%d").strftime("%d.%m.%Y")
-    body = {
-        "parent": {"database_id": NOTION_DB_ID},
-        "properties": {
+
+    # Fields that belong to kev_daily_health.py — never overwrite sleep-data.py's text columns
+    kev_props = {
+        "Sleep Score":        num(d.get("sleep_score")),
+        "HRV Last Night":     num(d.get("hrv_last")),
+        "HRV Weekly Avg":     num(d.get("hrv_avg")),
+        "HRV Status":         sel(hrv_sel),
+        "Body Battery":       num(d.get("bb")),
+        "Training Readiness": num(d.get("tr")),
+        "Training Call":      sel(p["call"]),
+        "L4/L5 Flag":         sel(p["flag"]),
+        "Key Insight":        rt(p["insight"]),
+        "Full Brief":         rt(p["brief"]),
+    }
+
+    page_id = find_notion_page(title)
+
+    if page_id:
+        # Row already created by sleep-data.py — patch only our columns
+        r = requests.patch(
+            f"https://api.notion.com/v1/pages/{page_id}",
+            headers={"Authorization": f"Bearer {NOTION_TOKEN}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"},
+            json={"properties": kev_props},
+            timeout=15,
+        )
+        print(f"  Notion PATCH status: {r.status_code}")
+        r.raise_for_status()
+        print(f"  Patched existing row: {title}")
+    else:
+        # sleep-data.py hasn't run yet or skipped — create a fallback row with everything we have
+        fallback_props = {
             "Date":               {"title": [{"type": "text", "text": {"content": title}}]},
             "Long Date":          {"date": {"start": iso_date}},
             "Total Sleep (h)":    num(d.get("total_sleep_h")),
@@ -196,26 +237,17 @@ def write_notion(d, p, iso_date):
             "Light Sleep (h)":    num(d.get("light_h")),
             "Awake Time (h)":     num(d.get("awake_h")),
             "Resting HR":         num(d.get("rhr")),
-            "Sleep Score":        num(d.get("sleep_score")),
-            "HRV Last Night":     num(d.get("hrv_last")),
-            "HRV Weekly Avg":     num(d.get("hrv_avg")),
-            "HRV Status":         sel(hrv_sel),
-            "Body Battery":       num(d.get("bb")),
-            "Training Readiness": num(d.get("tr")),
-            "Training Call":      sel(p["call"]),
-            "L4/L5 Flag":         sel(p["flag"]),
-            "Key Insight":        rt(p["insight"]),
-            "Full Brief":         rt(p["brief"]),
-        },
-    }
-    r = requests.post(
-        "https://api.notion.com/v1/pages",
-        headers={"Authorization": f"Bearer {NOTION_TOKEN}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"},
-        json=body, timeout=15,
-    )
-    print(f"  Notion status: {r.status_code}")
-    r.raise_for_status()
-    print("  Row created in Notion.")
+            **kev_props,
+        }
+        r = requests.post(
+            "https://api.notion.com/v1/pages",
+            headers={"Authorization": f"Bearer {NOTION_TOKEN}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"},
+            json={"parent": {"database_id": NOTION_DB_ID}, "properties": fallback_props},
+            timeout=15,
+        )
+        print(f"  Notion CREATE status: {r.status_code}")
+        r.raise_for_status()
+        print(f"  Created fallback row: {title}")
 
 
 def main():
