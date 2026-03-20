@@ -43,10 +43,14 @@ jobs:
           GARMIN_ACTIVITIES_FETCH_LIMIT: ${{ vars.GARMIN_ACTIVITIES_FETCH_LIMIT }}
           TZ: 'America/Montreal'
         run: |
-          python garmin-activities.py
-          python personal-records.py
-          python daily-steps.py
-          python sleep-data.py
+          for i in 1 2 3; do
+            python garmin-activities.py && \
+            python personal-records.py && \
+            python daily-steps.py && \
+            python sleep-data.py && break
+            echo "Attempt $i failed, waiting 60s before retry..."
+            sleep 60
+          done
 
       - name: Generate daily health brief
         env:
