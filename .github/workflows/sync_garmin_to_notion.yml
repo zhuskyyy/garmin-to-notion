@@ -60,4 +60,9 @@ jobs:
           NOTION_SLEEP_DB_ID: ${{ secrets.NOTION_SLEEP_DB_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TZ: 'Australia/Sydney'
-        run: python kev_daily_health.py
+        run: |
+          for i in 1 2 3; do
+            python kev_daily_health.py && break
+            echo "Attempt $i failed, waiting 60s before retry..."
+            sleep 60
+          done
