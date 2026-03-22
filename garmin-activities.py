@@ -296,9 +296,15 @@ def main():
     database_id = os.getenv("NOTION_DB_ID")
     garmin_fetch_limit = int(os.getenv("GARMIN_ACTIVITIES_FETCH_LIMIT") or "1000")
 
-    # Initialize Garmin client and login
-    garmin_client = GarminClient(garmin_email, garmin_password)
-    garmin_client.login()
+    # Initialize Garmin client — load cached token if available to avoid repeated logins (429)
+    TOKEN_DIR = "/tmp/garth_tokens"
+    try:
+        garmin_client = GarminClient(tokenstore=TOKEN_DIR)
+        garmin_client.login()
+    except Exception:
+        garmin_client = GarminClient(garmin_email, garmin_password)
+        garmin_client.login()
+        garmin_client.garth.dump(TOKEN_DIR)
     notion_client = NotionClient(auth=notion_token)
 
     # Get all activities

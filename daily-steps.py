@@ -98,9 +98,15 @@ def main():
     notion_token = os.getenv("NOTION_TOKEN")
     database_id = os.getenv("NOTION_STEPS_DB_ID")
 
-    # Initialize Garmin client and login
-    garmin = Garmin(garmin_email, garmin_password)
-    garmin.login()
+    # Initialize Garmin client — load cached token if available to avoid repeated logins (429)
+    TOKEN_DIR = "/tmp/garth_tokens"
+    try:
+        garmin = Garmin(tokenstore=TOKEN_DIR)
+        garmin.login()
+    except Exception:
+        garmin = Garmin(garmin_email, garmin_password)
+        garmin.login()
+        garmin.garth.dump(TOKEN_DIR)
     client = Client(auth=notion_token)
 
     daily_steps = get_all_daily_steps(garmin)

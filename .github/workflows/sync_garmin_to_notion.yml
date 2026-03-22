@@ -44,6 +44,7 @@ jobs:
           TZ: 'America/Montreal'
         run: |
           for i in 1 2 3; do
+            python garmin_auth.py && \
             python garmin-activities.py && \
             python personal-records.py && \
             python daily-steps.py && \
