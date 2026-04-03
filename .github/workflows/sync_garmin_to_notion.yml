@@ -49,8 +49,8 @@ jobs:
             python personal-records.py && \
             python daily-steps.py && \
             python sleep-data.py && break
-            echo "Attempt $i failed, waiting 60s before retry..."
-            sleep 60
+            echo "Attempt $i failed, waiting 300s before retry..."
+            sleep 300
           done
 
       - name: Generate daily health brief
@@ -64,6 +64,6 @@ jobs:
         run: |
           for i in 1 2 3; do
             python kev_daily_health.py && break
-            echo "Attempt $i failed, waiting 60s before retry..."
-            sleep 60
+            echo "Attempt $i failed, waiting 300s before retry..."
+            sleep 300
           done
