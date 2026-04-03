@@ -2,7 +2,7 @@ name: Sync Garmin to Notion
 
 on:
   schedule:
-    - cron: '30 21 * * *' # Daily
+    - cron: '30 22 * * *' # Daily 8:30am AEST (UTC+10, after daylight saving ended Apr 2026)
   workflow_dispatch:
 env:
   TZ: 'Australia/Sydney'
