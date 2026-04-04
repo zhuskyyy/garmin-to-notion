@@ -89,16 +89,8 @@ def main():
     database_id = os.getenv("NOTION_SLEEP_DB_ID")
 
     # Initialize Garmin client and login
-    TOKEN_DIR = "/tmp/garth_tokens"
-    try:
-        garmin = Garmin()
-        garmin.garth.load(TOKEN_DIR)
-        print("Using cached Garmin token")
-    except Exception:
-        garmin = Garmin(garmin_email, garmin_password)
-        garmin.login()
-        garmin.garth.dump(TOKEN_DIR)
-        print("Authenticated with credentials")
+    garmin = Garmin(garmin_email, garmin_password)
+    garmin.login()
     client = Client(auth=notion_token)
 
     data = get_sleep_data(garmin)

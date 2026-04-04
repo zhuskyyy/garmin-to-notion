@@ -34,16 +34,8 @@ SCHEDULE = {
 
 def pull_garmin():
     print("  Connecting to Garmin...")
-    TOKEN_DIR = "/tmp/garth_tokens"
-    try:
-        client = Garmin()
-        client.garth.load(TOKEN_DIR)
-        print("  Using cached Garmin token")
-    except Exception:
-        client = Garmin(GARMIN_EMAIL, GARMIN_PASSWORD)
-        client.login()
-        client.garth.dump(TOKEN_DIR)
-        print("  Authenticated with credentials")
+    client = Garmin(GARMIN_EMAIL, GARMIN_PASSWORD)
+    client.login()
     today = date.today()
     yesterday = (today - timedelta(days=1)).isoformat()
     today_str = today.isoformat()

@@ -2,7 +2,7 @@ name: Sync Garmin to Notion
 
 on:
   schedule:
-    - cron: '30 22 * * *' # Daily 8:30am AEST (UTC+10, after daylight saving ended Apr 2026)
+    - cron: '30 22 * * *' # Daily 8:30am AEST (UTC+10)
   workflow_dispatch:
 env:
   TZ: 'Australia/Sydney'
@@ -31,14 +31,6 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
 
-      - name: Restore Garmin token cache
-        uses: actions/cache@v4
-        with:
-          path: /tmp/garth_tokens
-          key: garmin-tokens-${{ runner.os }}-${{ github.run_number }}
-          restore-keys: |
-            garmin-tokens-${{ runner.os }}-
-
       - name: Run script
         env:
           GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
@@ -51,15 +43,10 @@ jobs:
           GARMIN_ACTIVITIES_FETCH_LIMIT: ${{ vars.GARMIN_ACTIVITIES_FETCH_LIMIT }}
           TZ: 'America/Montreal'
         run: |
-          for i in 1 2 3; do
-            python garmin_auth.py && \
-            python garmin-activities.py && \
-            python personal-records.py && \
-            python daily-steps.py && \
-            python sleep-data.py && break
-            echo "Attempt $i failed, waiting 300s before retry..."
-            sleep 300
-          done
+          python garmin-activities.py
+          python personal-records.py
+          python daily-steps.py
+          python sleep-data.py
 
       - name: Generate daily health brief
         env:
@@ -69,9 +56,4 @@ jobs:
           NOTION_SLEEP_DB_ID: ${{ secrets.NOTION_SLEEP_DB_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TZ: 'Australia/Sydney'
-        run: |
-          for i in 1 2 3; do
-            python kev_daily_health.py && break
-            echo "Attempt $i failed, waiting 300s before retry..."
-            sleep 300
-          done
+        run: python kev_daily_health.py
