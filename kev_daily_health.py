@@ -34,8 +34,13 @@ SCHEDULE = {
 
 def pull_garmin():
     print("  Connecting to Garmin...")
-    client = Garmin(GARMIN_EMAIL, GARMIN_PASSWORD)
-    client.login()
+    token_dir = os.environ.get("GARMIN_TOKEN_DIR")
+    if token_dir:
+        client = Garmin()
+        client.garth.load(token_dir)
+    else:
+        client = Garmin(GARMIN_EMAIL, GARMIN_PASSWORD)
+        client.login()
     today = date.today()
     yesterday = (today - timedelta(days=1)).isoformat()
     today_str = today.isoformat()

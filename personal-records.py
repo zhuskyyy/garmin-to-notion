@@ -240,8 +240,14 @@ def main():
     notion_token = os.getenv("NOTION_TOKEN")
     database_id = os.getenv("NOTION_PR_DB_ID")
 
-    garmin = Garmin(garmin_email, garmin_password)
-    garmin.login()
+    # Initialize Garmin client — load cached tokens if available, else fresh login
+    token_dir = os.getenv("GARMIN_TOKEN_DIR")
+    if token_dir:
+        garmin = Garmin()
+        garmin.garth.load(token_dir)
+    else:
+        garmin = Garmin(garmin_email, garmin_password)
+        garmin.login()
 
     client = Client(auth=notion_token)
 

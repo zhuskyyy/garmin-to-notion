@@ -31,6 +31,12 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
 
+      - name: Write Garmin tokens from secrets
+        run: |
+          mkdir -p /tmp/garth_tokens
+          echo '${{ secrets.GARTH_OAUTH1_TOKEN }}' > /tmp/garth_tokens/oauth1_token.json
+          echo '${{ secrets.GARTH_OAUTH2_TOKEN }}' > /tmp/garth_tokens/oauth2_token.json
+
       - name: Run script
         env:
           GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
@@ -41,6 +47,7 @@ jobs:
           NOTION_STEPS_DB_ID: ${{ secrets.NOTION_STEPS_DB_ID }}
           NOTION_SLEEP_DB_ID: ${{ secrets.NOTION_SLEEP_DB_ID }}
           GARMIN_ACTIVITIES_FETCH_LIMIT: ${{ vars.GARMIN_ACTIVITIES_FETCH_LIMIT }}
+          GARMIN_TOKEN_DIR: /tmp/garth_tokens
           TZ: 'America/Montreal'
         run: |
           python garmin-activities.py
@@ -55,5 +62,6 @@ jobs:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_SLEEP_DB_ID: ${{ secrets.NOTION_SLEEP_DB_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GARMIN_TOKEN_DIR: /tmp/garth_tokens
           TZ: 'Australia/Sydney'
         run: python kev_daily_health.py
